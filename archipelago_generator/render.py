@@ -23,15 +23,28 @@ BIOME_GLYPHS = {
 
 
 def render_archipelago(arch: Archipelago) -> None:
-    """Render the archipelago to the terminal using ASCII art."""
+    """Render the archipelago with cities, rivers and roads."""
     grid = rasterize(arch.cells, arch.biome, arch.width, arch.height)
     term = Terminal()
     lines: list[str] = []
+    cities = set(arch.cities)
     for y in range(arch.height):
         line = ""
         for x in range(arch.width):
-            biome = grid[y, x]
-            glyph, rgb = BIOME_GLYPHS.get(biome, ("?", (255, 255, 255)))
-            line += term.color_rgb(*rgb) + glyph + term.normal
+            ch: str
+            rgb: tuple[int, int, int]
+            if arch.road_map[y, x]:
+                ch, rgb = ":", (180, 100, 50)
+            elif arch.river_map[y, x] > 0:
+                if arch.river_width[y, x] > 2:
+                    ch, rgb = "≡", (0, 100, 255)
+                else:
+                    ch, rgb = "=", (80, 180, 255)
+            elif (y, x) in cities:
+                ch, rgb = "@", (230, 180, 0)
+            else:
+                biome = grid[y, x]
+                ch, rgb = BIOME_GLYPHS.get(biome, ("?", (255, 255, 255)))
+            line += term.color_rgb(*rgb) + ch + term.normal
         lines.append(line)
     print(term.home + "\n".join(lines))
