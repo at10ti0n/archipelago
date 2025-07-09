@@ -57,7 +57,7 @@ def compute_water_flux(elevation: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def trace_rivers(
-    water_flux: np.ndarray, downslope: np.ndarray, elevation: np.ndarray, *, min_flux: float = 20.0
+    water_flux: np.ndarray, downslope: np.ndarray, elevation: np.ndarray, *, min_flux: float = 3.0
 ) -> tuple[np.ndarray, np.ndarray]:
     """Trace river paths following downslope until reaching sea level."""
 
