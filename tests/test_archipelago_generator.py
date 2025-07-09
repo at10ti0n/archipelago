@@ -1,5 +1,6 @@
 import numpy as np
 from archipelago_generator import generate_archipelago
+from archipelago_generator import render_archipelago
 
 
 def test_deterministic():
@@ -20,3 +21,10 @@ def test_cell_count():
     assert arch.river_map.shape == (arch.height, arch.width)
     assert arch.road_map.shape == (arch.height, arch.width)
     assert isinstance(arch.cities, list)
+
+
+def test_render_runs(capsys):
+    arch = generate_archipelago(width=30, height=30, seed=3)
+    render_archipelago(arch)
+    captured = capsys.readouterr()
+    assert "\n" in captured.out
