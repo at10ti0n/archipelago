@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 from shapely.geometry import Polygon
@@ -15,6 +15,8 @@ from .elevation import assign_elevation
 from .climate import compute_temperature, compute_rainfall
 from .moisture import compute_moisture
 from .biomes import classify_biomes
+from .rivers import compute_rivers, place_cities, build_roads
+from .rasterizer import rasterize
 from .utils import seeded_rng
 
 
@@ -29,6 +31,7 @@ class ArchipelagoParams:
     min_island_radius: float = 60.0
     max_island_radius: float = 100.0
     sea_level: float = 0.3
+    num_cities: int = 3
 
 
 @dataclass
@@ -42,6 +45,10 @@ class Archipelago:
     rainfall: np.ndarray
     moisture: np.ndarray
     biome: np.ndarray
+    river_map: np.ndarray
+    river_width: np.ndarray
+    road_map: np.ndarray
+    cities: list[tuple[int, int]]
 
 
 def generate_archipelago(**kwargs) -> Archipelago:
@@ -63,6 +70,12 @@ def generate_archipelago(**kwargs) -> Archipelago:
     moisture = compute_moisture(rainfall)
     biome = classify_biomes(land, temperature, moisture)
 
+    # Rasterize elevation for river and city generation
+    elev_grid = rasterize(cells, elevation, params.width, params.height)
+    river_map, river_width = compute_rivers(elev_grid)
+    cities = place_cities(river_map, elev_grid, n_cities=params.num_cities)
+    road_map = build_roads(cities, elev_grid)
+
     return Archipelago(
         width=params.width,
         height=params.height,
@@ -73,5 +86,9 @@ def generate_archipelago(**kwargs) -> Archipelago:
         rainfall=rainfall,
         moisture=moisture,
         biome=biome,
+        river_map=river_map,
+        river_width=river_width,
+        road_map=road_map,
+        cities=cities,
     )
 
