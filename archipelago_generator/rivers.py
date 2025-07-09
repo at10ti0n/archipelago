@@ -12,6 +12,8 @@ from __future__ import annotations
 import heapq
 from typing import List, Tuple
 
+SEA_LEVEL = 0.26
+
 import numpy as np
 
 
@@ -69,14 +71,14 @@ def trace_rivers(
         for x in range(width):
             if water_flux[y, x] >= min_flux and (y, x) not in visited:
                 cy, cx = y, x
-                while elevation[cy, cx] >= 0.26:
+                while elevation[cy, cx] >= SEA_LEVEL:
                     if (cy, cx) in visited:
                         break
                     visited.add((cy, cx))
                     river_map[cy, cx] = river_id
                     river_width[cy, cx] = int(max(1, np.log2(water_flux[cy, cx])))
                     ny, nx = downslope[cy, cx]
-                    if ny < 0 or elevation[ny, nx] < 0.26:
+                    if ny < 0 or elevation[ny, nx] < SEA_LEVEL:
                         break
                     cy, cx = ny, nx
                 river_id += 1
@@ -93,9 +95,9 @@ def place_cities(
     candidates: list[tuple[int, int]] = []
     for y in range(height):
         for x in range(width):
-            if 0.26 < elevation[y, x] < 0.8:
+            if SEA_LEVEL < elevation[y, x] < 0.8:
                 if river_map[y, x] > 0 or any(
-                    0 <= y + dy < height and 0 <= x + dx < width and elevation[y + dy, x + dx] < 0.26
+                    0 <= y + dy < height and 0 <= x + dx < width and elevation[y + dy, x + dx] < SEA_LEVEL
                     for dy in [-1, 0, 1]
                     for dx in [-1, 0, 1]
                 ):
@@ -160,6 +162,7 @@ def build_roads(cities: List[Tuple[int, int]], elevation: np.ndarray) -> np.ndar
         return road
 
     cost = 1.0 + elevation * 3.0
+    cost[elevation < SEA_LEVEL] = 1e6
     for a, b in zip(cities[:-1], cities[1:]):
         path = _astar(a, b, cost)
         for y, x in path:
