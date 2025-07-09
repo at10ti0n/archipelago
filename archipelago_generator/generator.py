@@ -57,6 +57,8 @@ def generate_archipelago(**kwargs) -> Archipelago:
 
     pts = poisson_disk_sampling(params.width, params.height, params.point_radius, rng)
     pts = lloyd_relaxation(pts, params.width, params.height, params.relax_iterations)
+    # Apply Lloyd relaxation a second time for smoother point distribution
+    pts = lloyd_relaxation(pts, params.width, params.height, params.relax_iterations)
     cells = compute_voronoi(pts, params.width, params.height)
 
     islands = generate_islands(params.num_islands, params.width, params.height, rng,
