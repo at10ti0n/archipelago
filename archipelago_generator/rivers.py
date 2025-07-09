@@ -66,22 +66,23 @@ def trace_rivers(
     river_width = np.zeros((height, width), dtype=int)
     river_id = 1
     visited: set[tuple[int, int]] = set()
+    coords = [(y, x) for y in range(height) for x in range(width) if water_flux[y, x] >= min_flux]
+    coords.sort(key=lambda p: water_flux[p], reverse=True)
 
-    for y in range(height):
-        for x in range(width):
-            if water_flux[y, x] >= min_flux and (y, x) not in visited:
-                cy, cx = y, x
-                while elevation[cy, cx] >= SEA_LEVEL:
-                    if (cy, cx) in visited:
-                        break
-                    visited.add((cy, cx))
-                    river_map[cy, cx] = river_id
-                    river_width[cy, cx] = int(max(1, np.log2(water_flux[cy, cx])))
-                    ny, nx = downslope[cy, cx]
-                    if ny < 0 or elevation[ny, nx] < SEA_LEVEL:
-                        break
-                    cy, cx = ny, nx
-                river_id += 1
+    for y, x in coords:
+        if (y, x) not in visited:
+            cy, cx = y, x
+            while elevation[cy, cx] >= SEA_LEVEL:
+                if (cy, cx) in visited:
+                    break
+                visited.add((cy, cx))
+                river_map[cy, cx] = river_id
+                river_width[cy, cx] = int(max(1, np.log2(water_flux[cy, cx])))
+                ny, nx = downslope[cy, cx]
+                if ny < 0 or elevation[ny, nx] < SEA_LEVEL:
+                    break
+                cy, cx = ny, nx
+            river_id += 1
 
     return river_map, river_width
 
