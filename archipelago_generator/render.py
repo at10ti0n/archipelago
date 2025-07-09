@@ -33,15 +33,15 @@ def render_archipelago(arch: Archipelago) -> None:
         for x in range(arch.width):
             ch: str
             rgb: tuple[int, int, int]
-            if arch.road_map[y, x]:
+            if (y, x) in cities:
+                ch, rgb = "@", (230, 180, 0)
+            elif arch.road_map[y, x]:
                 ch, rgb = ":", (180, 100, 50)
             elif arch.river_map[y, x] > 0:
                 if arch.river_width[y, x] > 2:
                     ch, rgb = "≡", (0, 100, 255)
                 else:
                     ch, rgb = "=", (80, 180, 255)
-            elif (y, x) in cities:
-                ch, rgb = "@", (230, 180, 0)
             else:
                 biome = grid[y, x]
                 ch, rgb = BIOME_GLYPHS.get(biome, ("?", (255, 255, 255)))
