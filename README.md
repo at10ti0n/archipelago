@@ -11,7 +11,7 @@ It also includes a basic archipelago generator following `prds/archipelago_prd.m
 Install dependencies:
 
 ```bash
-pip install numpy perlin-noise scipy noise shapely Pillow blessed
+pip install -r requirements.txt
 ```
 
 Generate a map:

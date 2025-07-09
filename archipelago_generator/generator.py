@@ -33,6 +33,8 @@ class ArchipelagoParams:
 
 @dataclass
 class Archipelago:
+    width: int
+    height: int
     cells: list[Polygon]
     land: np.ndarray
     elevation: np.ndarray
@@ -62,6 +64,8 @@ def generate_archipelago(**kwargs) -> Archipelago:
     biome = classify_biomes(land, temperature, moisture)
 
     return Archipelago(
+        width=params.width,
+        height=params.height,
         cells=cells,
         land=land,
         elevation=elevation,

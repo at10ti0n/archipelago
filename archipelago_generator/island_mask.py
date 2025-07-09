@@ -7,6 +7,7 @@ from typing import List
 
 import numpy as np
 from shapely.geometry import Polygon, Point
+from perlin_noise import PerlinNoise
 
 
 @dataclass
@@ -28,7 +29,6 @@ def generate_islands(num_islands: int, width: int, height: int, rng: np.random.G
 
 def classify_land(cells: List[Polygon], islands: List[Island], sea_level: float,
                   rng: np.random.Generator) -> List[bool]:
-    from noise import pnoise2
     result = []
     for poly in cells:
         centroid = np.array(poly.centroid.coords[0])
@@ -36,8 +36,9 @@ def classify_land(cells: List[Polygon], islands: List[Island], sea_level: float,
         for isl in islands:
             d = np.linalg.norm(centroid - isl.center)
             mask = max(mask, 1 - min(1, d / isl.radius))
-        noise = pnoise2(centroid[0] * 0.01, centroid[1] * 0.01, repeatx=1024, repeaty=1024, base=int(rng.integers(0, 10000)))
-        val = mask + noise * 0.3
+        seed = int(rng.integers(0, 10000))
+        noise = PerlinNoise(seed=seed)
+        val = mask + noise([centroid[0] * 0.01, centroid[1] * 0.01]) * 0.3
         result.append(val > sea_level)
     return result
 

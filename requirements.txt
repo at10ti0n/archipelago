@@ -1,0 +1,6 @@
+numpy
+perlin-noise
+scipy
+shapely
+Pillow
+blessed
