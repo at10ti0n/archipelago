@@ -29,6 +29,9 @@ def generate_islands(num_islands: int, width: int, height: int, rng: np.random.G
 
 def classify_land(cells: List[Polygon], islands: List[Island], sea_level: float,
                   rng: np.random.Generator) -> List[bool]:
+    """Classify Voronoi cells as land or ocean using continuous noise."""
+
+    noise = PerlinNoise(seed=int(rng.integers(0, 10000)))
     result = []
     for poly in cells:
         centroid = np.array(poly.centroid.coords[0])
@@ -36,8 +39,6 @@ def classify_land(cells: List[Polygon], islands: List[Island], sea_level: float,
         for isl in islands:
             d = np.linalg.norm(centroid - isl.center)
             mask = max(mask, 1 - min(1, d / isl.radius))
-        seed = int(rng.integers(0, 10000))
-        noise = PerlinNoise(seed=seed)
         val = mask + noise([centroid[0] * 0.01, centroid[1] * 0.01]) * 0.3
         result.append(val > sea_level)
     return result

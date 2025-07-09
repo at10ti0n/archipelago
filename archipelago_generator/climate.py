@@ -15,11 +15,12 @@ def compute_temperature(cells, height: float) -> np.ndarray:
 
 
 def compute_rainfall(cells, rng: np.random.Generator) -> np.ndarray:
+    """Generate continuous rainfall using a shared noise field."""
+
+    noise = PerlinNoise(seed=int(rng.integers(0, 10000)))
     rain = np.zeros(len(cells))
     for i, poly in enumerate(cells):
         c = poly.centroid
-        seed = int(rng.integers(0, 10000))
-        noise = PerlinNoise(seed=seed)
         n = noise([c.x * 0.01, c.y * 0.01])
         rain[i] = (n + 1) / 2
     return rain
