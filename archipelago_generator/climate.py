@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from perlin_noise import PerlinNoise
 
 
 def compute_temperature(cells, height: float) -> np.ndarray:
@@ -14,11 +15,12 @@ def compute_temperature(cells, height: float) -> np.ndarray:
 
 
 def compute_rainfall(cells, rng: np.random.Generator) -> np.ndarray:
-    from noise import pnoise2
     rain = np.zeros(len(cells))
     for i, poly in enumerate(cells):
         c = poly.centroid
-        n = pnoise2(c.x * 0.01, c.y * 0.01, repeatx=1024, repeaty=1024, base=int(rng.integers(0, 10000)))
+        seed = int(rng.integers(0, 10000))
+        noise = PerlinNoise(seed=seed)
+        n = noise([c.x * 0.01, c.y * 0.01])
         rain[i] = (n + 1) / 2
     return rain
 
