@@ -15,17 +15,13 @@ def rasterize(cells: List[Polygon], values: np.ndarray, width: int, height: int)
 
     grid = np.zeros((height, width), dtype=values.dtype)
     tree = STRtree(cells)
-    index_map = {geom.wkb: idx for idx, geom in enumerate(cells)}
     prepared = [prep(c) for c in cells]
 
     for y in range(height):
         for x in range(width):
             pt_geom = Point(x + 0.5, y + 0.5)
-            candidates = tree.query(pt_geom, predicate="contains")
-            for geom in candidates:
-                idx = index_map.get(geom.wkb)
-                if idx is None:
-                    continue
+            candidate_idxs = tree.query(pt_geom, predicate="intersects")
+            for idx in candidate_idxs:
                 if prepared[idx].contains(pt_geom):
                     grid[y, x] = values[idx]
                     break

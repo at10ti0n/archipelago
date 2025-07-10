@@ -16,10 +16,11 @@ def main() -> None:
     parser.add_argument("--width", type=int, default=200)
     parser.add_argument("--height", type=int, default=200)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--legend", action="store_true", help="show biome legend")
     args = parser.parse_args()
     arch = generate_archipelago(width=args.width, height=args.height, seed=args.seed)
     print(f"Generated archipelago with {len(arch.cells)} cells")
-    render_archipelago(arch)
+    render_archipelago(arch, show_legend=args.legend)
 
 
 if __name__ == "__main__":

@@ -32,6 +32,17 @@ def test_render_runs(capsys):
     assert "\n" in captured.out
 
 
+def test_render_legend(capsys):
+    arch = generate_archipelago(width=30, height=30, seed=5)
+    render_archipelago(arch, show_legend=True)
+    captured = capsys.readouterr()
+    output = captured.out
+    assert "ocean" in output
+    assert "city" in output
+    assert "road" in output
+    assert "river" in output
+
+
 def test_roads_on_land():
     arch = generate_archipelago(width=60, height=60, seed=4)
     elev_grid = rasterize(arch.cells, arch.elevation, arch.width, arch.height)
