@@ -21,9 +21,25 @@ BIOME_GLYPHS = {
     "scorched": ("x", (120, 40, 0)),
 }
 
+# Additional glyphs for non-biome features
+FEATURE_GLYPHS = {
+    "city": ("@", (230, 180, 0)),
+    "road": (":", (180, 100, 50)),
+    "river": ("=", (80, 180, 255)),
+    "wide river": ("≡", (0, 100, 255)),
+}
 
-def render_archipelago(arch: Archipelago) -> None:
-    """Render the archipelago with cities, rivers and roads."""
+
+def render_archipelago(arch: Archipelago, show_legend: bool = False) -> None:
+    """Render the archipelago with cities, rivers and roads.
+
+    Parameters
+    ----------
+    arch:
+        The archipelago data object to render.
+    show_legend:
+        If ``True``, print a legend of biome glyphs below the map.
+    """
     grid = rasterize(arch.cells, arch.biome, arch.width, arch.height)
     term = Terminal()
     lines: list[str] = []
@@ -48,3 +64,15 @@ def render_archipelago(arch: Archipelago) -> None:
             line += term.color_rgb(*rgb) + ch + term.normal
         lines.append(line)
     print(term.home + "\n".join(lines))
+
+    if show_legend:
+        legend_lines = []
+        for biome in sorted(BIOME_GLYPHS):
+            glyph, rgb = BIOME_GLYPHS[biome]
+            legend_lines.append(term.color_rgb(*rgb) + glyph + term.normal + f" {biome}")
+
+        for feature in ["city", "road", "river", "wide river"]:
+            glyph, rgb = FEATURE_GLYPHS[feature]
+            legend_lines.append(term.color_rgb(*rgb) + glyph + term.normal + f" {feature}")
+
+        print("\n".join(legend_lines))

@@ -24,7 +24,10 @@ Generate an archipelago preview:
 
 ```bash
 python archipelago_generator/examples/demo.py --width 200 --height 200 --seed 42
+python archipelago_generator/examples/demo.py --width 80 --height 40 --seed 42 --legend
 ```
+The legend lists glyphs for all biomes along with markers for cities (`@`), roads
+(`:`), and rivers (`=`/`≡`).
 
 ## Tests
 
