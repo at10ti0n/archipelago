@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from shapely.geometry import Polygon, LineString
@@ -15,7 +15,7 @@ from .climate import compute_temperature, compute_rainfall
 from .moisture import compute_moisture
 from .biomes import classify_biomes
 from .rivers import compute_rivers, place_cities, build_roads
-from .borders import compute_adjacency, unite_regions, compute_borders
+from .borders import unite_regions, compute_borders
 from .rasterizer import rasterize
 from .utils import seeded_rng
 
@@ -56,9 +56,7 @@ def generate_archipelago(**kwargs) -> Archipelago:
 
     pts = random_points(params.point_count, params.width, params.height, rng)
     pts = lloyd_relaxation(pts, params.width, params.height, params.relax_iterations)
-    # Apply Lloyd relaxation a second time for smoother point distribution
-    pts = lloyd_relaxation(pts, params.width, params.height, params.relax_iterations)
-    cells = compute_voronoi(pts, params.width, params.height)
+    cells, neighbors = compute_voronoi(pts, params.width, params.height)
 
     elevation = assign_elevation(cells, params.width, params.height, rng)
     land_mask = elevation > params.sea_level
@@ -68,7 +66,6 @@ def generate_archipelago(**kwargs) -> Archipelago:
     moisture = compute_moisture(rainfall)
     biome = classify_biomes(land, temperature, moisture)
 
-    neighbors = compute_adjacency(cells)
     regions = unite_regions(biome, neighbors)
     borders = compute_borders(cells, biome, neighbors, seed=int(rng.integers(0, 1_000_000)))
 

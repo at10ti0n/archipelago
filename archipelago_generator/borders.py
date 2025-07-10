@@ -8,26 +8,57 @@ import numpy as np
 from shapely.geometry import Polygon, LineString
 from shapely.geometry.base import BaseGeometry
 from shapely.prepared import prep
+from shapely.strtree import STRtree
 from perlin_noise import PerlinNoise
 
 
 def compute_adjacency(cells: List[Polygon]) -> List[Set[int]]:
-    """Return adjacency list of polygons sharing an edge."""
+    """Return adjacency list of polygons sharing an edge.
+
+    This implementation uses an ``STRtree`` spatial index to avoid the
+    quadratic pairwise check across all polygons. Each polygon queries the
+    tree for potential neighbors and then verifies edge touching. This greatly
+    accelerates processing for larger maps (e.g. 1024 cells).
+    """
+
     n = len(cells)
     neighbors: List[Set[int]] = [set() for _ in range(n)]
+
+    tree = STRtree(cells)
+    index_map = {geom.wkb: idx for idx, geom in enumerate(cells)}
+
     prepared = [prep(c) for c in cells]
-    bboxes = [c.bounds for c in cells]
-    for i in range(n):
-        minx1, miny1, maxx1, maxy1 = bboxes[i]
-        for j in range(i + 1, n):
-            minx2, miny2, maxx2, maxy2 = bboxes[j]
-            if maxx1 < minx2 or maxx2 < minx1 or maxy1 < miny2 or maxy2 < miny1:
+
+    for i, poly in enumerate(cells):
+        results = tree.query(poly)
+        # shapely >=2 returns numpy array of indices
+        if len(results) > 0 and isinstance(results[0], (int, np.integer)):
+            candidate_indices = results
+        else:
+            candidate_indices = []
+            for obj in results:
+                idx = index_map.get(obj.wkb)
+                if idx is None:
+                    try:
+                        idx = next(k for k, g in enumerate(cells) if g.equals(obj))
+                    except StopIteration:
+                        continue
+                candidate_indices.append(idx)
+
+        for j in candidate_indices:
+            if j == i or j in neighbors[i]:
                 continue
-            if prepared[i].touches(cells[j]):
-                inter = cells[i].intersection(cells[j])
-                if isinstance(inter, BaseGeometry) and inter.geom_type in ("LineString", "MultiLineString") and not inter.is_empty:
+            cand = cells[j]
+            if prepared[i].touches(cand):
+                inter = poly.intersection(cand)
+                if (
+                    isinstance(inter, BaseGeometry)
+                    and inter.geom_type in ("LineString", "MultiLineString")
+                    and not inter.is_empty
+                ):
                     neighbors[i].add(j)
                     neighbors[j].add(i)
+
     return neighbors
 
 
