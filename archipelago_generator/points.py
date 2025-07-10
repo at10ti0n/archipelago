@@ -64,6 +64,13 @@ def poisson_disk_sampling(width: int, height: int, radius: float, rng: np.random
     return np.array(points)
 
 
+def random_points(n: int, width: int, height: int, rng: np.random.Generator) -> np.ndarray:
+    """Generate ``n`` random points uniformly in the bounding box."""
+    xs = rng.random(n) * width
+    ys = rng.random(n) * height
+    return np.stack([xs, ys], axis=1)
+
+
 def lloyd_relaxation(points: np.ndarray, width: int, height: int, iterations: int) -> np.ndarray:
     """Apply Lloyd relaxation to points."""
     from scipy.spatial import Voronoi
