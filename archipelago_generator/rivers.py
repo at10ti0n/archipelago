@@ -65,13 +65,14 @@ def trace_rivers(
     *,
     min_flux: float = 3.0,
     sea_level: float = SEA_LEVEL,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, List[List[Tuple[int, int]]]]:
     """Trace river paths following downslope until reaching sea level."""
 
     height, width = elevation.shape
     river_map = np.zeros((height, width), dtype=int)
     river_width = np.zeros((height, width), dtype=int)
     river_id = 1
+    lines: List[List[Tuple[int, int]]] = []
     visited: set[tuple[int, int]] = set()
     coords = [(y, x) for y in range(height) for x in range(width) if water_flux[y, x] >= min_flux]
     coords.sort(key=lambda p: water_flux[p], reverse=True)
@@ -79,27 +80,31 @@ def trace_rivers(
     for y, x in coords:
         if (y, x) not in visited:
             cy, cx = y, x
+            line: List[Tuple[int, int]] = []
             while elevation[cy, cx] >= sea_level:
                 if (cy, cx) in visited:
                     break
                 visited.add((cy, cx))
                 river_map[cy, cx] = river_id
                 river_width[cy, cx] = int(max(1, np.log2(water_flux[cy, cx])))
+                line.append((cx, cy))
                 ny, nx = downslope[cy, cx]
                 if ny < 0 or elevation[ny, nx] < sea_level:
                     break
                 cy, cx = ny, nx
+            if len(line) > 1:
+                lines.append(line)
             river_id += 1
 
-    return river_map, river_width
+    return river_map, river_width, lines
 
 
 
 
 def compute_rivers(
     elevation: np.ndarray, *, sea_level: float = SEA_LEVEL
-) -> tuple[np.ndarray, np.ndarray]:
-    """Convenience wrapper returning ``(river_map, river_width)``."""
+) -> tuple[np.ndarray, np.ndarray, List[List[Tuple[int, int]]]]:
+    """Convenience wrapper returning ``(river_map, river_width, lines)``."""
 
     flux, downslope = compute_water_flux(elevation, sea_level=sea_level)
     return trace_rivers(flux, downslope, elevation, sea_level=sea_level)
