@@ -6,8 +6,17 @@ import numpy as np
 from perlin_noise import PerlinNoise
 
 
-def compute_temperature(cells, height: float) -> np.ndarray:
-    noise = PerlinNoise(seed=42)
+def compute_temperature(
+    cells,
+    height: float,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
+    """Generate latitudinal temperature gradient with subtle noise."""
+
+    if rng is None:
+        rng = np.random.default_rng(0)
+
+    noise = PerlinNoise(seed=int(rng.integers(0, 10_000)))
     temp = np.zeros(len(cells))
     for i, poly in enumerate(cells):
         y = poly.centroid.y / height

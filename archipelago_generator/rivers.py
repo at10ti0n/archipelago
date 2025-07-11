@@ -12,6 +12,9 @@ from __future__ import annotations
 import heapq
 from typing import List, Tuple
 
+from perlin_noise import PerlinNoise
+from shapely.geometry import LineString
+
 SEA_LEVEL = 0.26
 
 import numpy as np
@@ -101,6 +104,7 @@ def place_cities(
     n_cities: int = 3,
     min_dist: int = 10,
     sea_level: float = SEA_LEVEL,
+    rng: np.random.Generator | None = None,
 ) -> List[Tuple[int, int]]:
     """Place cities near rivers or coasts with spacing."""
 
@@ -118,7 +122,8 @@ def place_cities(
                 ):
                     candidates.append((y, x))
 
-    rng = np.random.default_rng(0)
+    if rng is None:
+        rng = np.random.default_rng(0)
     rng.shuffle(candidates)
     cities: list[tuple[int, int]] = []
     for c in candidates:
@@ -168,13 +173,41 @@ def _astar(start: tuple[int, int], goal: tuple[int, int], cost_grid: np.ndarray)
     return path
 
 
+def _distort_line(line: LineString, noise: PerlinNoise, *, amplitude: float, frequency: float) -> LineString:
+    """Return a distorted copy of ``line`` using 1D noise."""
+    if line.length == 0:
+        return line
+    (x1, y1), (x2, y2) = line.coords[0], line.coords[-1]
+    vec = np.array([x2 - x1, y2 - y1])
+    norm = np.array([-vec[1], vec[0]])
+    if np.allclose(norm, 0):
+        return line
+    norm = norm / np.linalg.norm(norm)
+    steps = max(int(line.length / 5), 2)
+    pts = []
+    for i in range(steps + 1):
+        t = i / steps
+        x = x1 + vec[0] * t
+        y = y1 + vec[1] * t
+        offset = noise(t * frequency) * amplitude
+        pts.append((x + norm[0] * offset, y + norm[1] * offset))
+    return LineString(pts)
+
+
 def build_roads(
     cities: List[Tuple[int, int]],
     elevation: np.ndarray,
     *,
     sea_level: float = SEA_LEVEL,
+    noise_amplitude: float = 1.0,
+    noise_frequency: float = 0.15,
+    seed: int = 0,
 ) -> np.ndarray:
-    """Connect consecutive cities using A* to create roads."""
+    """Connect consecutive cities using A* to create roads.
+
+    The resulting paths are lightly distorted using 1D Perlin noise to avoid
+    perfectly straight segments.
+    """
 
     height, width = elevation.shape
     road = np.zeros((height, width), dtype=bool)
@@ -183,10 +216,30 @@ def build_roads(
 
     cost = 1.0 + elevation * 3.0
     cost[elevation < sea_level] = 1e6
-    for a, b in zip(cities[:-1], cities[1:]):
+
+    noise = PerlinNoise(seed=seed)
+
+    for idx, (a, b) in enumerate(zip(cities[:-1], cities[1:])):
         path = _astar(a, b, cost)
-        for y, x in path:
-            road[y, x] = True
+        if len(path) < 2:
+            continue
+        line = LineString([(x, y) for y, x in path])
+        line = _distort_line(
+            line,
+            noise,
+            amplitude=noise_amplitude,
+            frequency=noise_frequency,
+        )
+
+        length = line.length
+        d = 0.0
+        while d <= length:
+            pt = line.interpolate(d)
+            x = int(round(pt.x))
+            y = int(round(pt.y))
+            if 0 <= y < height and 0 <= x < width and elevation[y, x] >= sea_level:
+                road[y, x] = True
+            d += 1.0
     return road
 
 
