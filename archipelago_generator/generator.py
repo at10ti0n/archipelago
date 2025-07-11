@@ -71,9 +71,14 @@ def generate_archipelago(**kwargs) -> Archipelago:
 
     # Rasterize elevation for river and city generation
     elev_grid = rasterize(cells, elevation, params.width, params.height)
-    river_map, river_width = compute_rivers(elev_grid)
-    cities = place_cities(river_map, elev_grid, n_cities=params.num_cities)
-    road_map = build_roads(cities, elev_grid)
+    river_map, river_width = compute_rivers(elev_grid, sea_level=params.sea_level)
+    cities = place_cities(
+        river_map,
+        elev_grid,
+        n_cities=params.num_cities,
+        sea_level=params.sea_level,
+    )
+    road_map = build_roads(cities, elev_grid, sea_level=params.sea_level)
 
     return Archipelago(
         width=params.width,
