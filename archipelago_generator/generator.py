@@ -61,7 +61,7 @@ def generate_archipelago(**kwargs) -> Archipelago:
     elevation = assign_elevation(cells, params.width, params.height, rng)
     land_mask = elevation > params.sea_level
     land = land_mask.astype(bool)
-    temperature = compute_temperature(cells, params.height)
+    temperature = compute_temperature(cells, params.height, rng)
     rainfall = compute_rainfall(cells, rng)
     moisture = compute_moisture(rainfall)
     biome = classify_biomes(land, temperature, moisture)
@@ -77,8 +77,14 @@ def generate_archipelago(**kwargs) -> Archipelago:
         elev_grid,
         n_cities=params.num_cities,
         sea_level=params.sea_level,
+        rng=rng,
     )
-    road_map = build_roads(cities, elev_grid, sea_level=params.sea_level)
+    road_map = build_roads(
+        cities,
+        elev_grid,
+        sea_level=params.sea_level,
+        seed=int(rng.integers(0, 1_000_000)),
+    )
 
     return Archipelago(
         width=params.width,
