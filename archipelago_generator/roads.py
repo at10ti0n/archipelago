@@ -80,7 +80,7 @@ def build_roads(
     noise_amplitude: float = 1.0,
     noise_frequency: float = 0.15,
     seed: int = 0,
-) -> np.ndarray:
+) -> tuple[np.ndarray, List[List[Tuple[float, float]]]]:
     """Connect consecutive cities using A* to create roads.
 
     The resulting paths are lightly distorted using 1D Perlin noise to avoid
@@ -89,8 +89,9 @@ def build_roads(
 
     height, width = elevation.shape
     road = np.zeros((height, width), dtype=bool)
+    lines: List[List[Tuple[float, float]]] = []
     if len(cities) < 2:
-        return road
+        return road, lines
 
     cost = 1.0 + elevation * 3.0
     cost[elevation < sea_level] = 1e6
@@ -108,6 +109,7 @@ def build_roads(
             amplitude=noise_amplitude,
             frequency=noise_frequency,
         )
+        lines.append([(pt[0], pt[1]) for pt in line.coords])
 
         length = line.length
         d = 0.0
@@ -118,4 +120,4 @@ def build_roads(
             if 0 <= y < height and 0 <= x < width and elevation[y, x] >= sea_level:
                 road[y, x] = True
             d += 1.0
-    return road
+    return road, lines
