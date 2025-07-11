@@ -14,7 +14,9 @@ from .elevation import assign_elevation
 from .climate import compute_temperature, compute_rainfall
 from .moisture import compute_moisture
 from .biomes import classify_biomes
-from .rivers import compute_rivers, place_cities, build_roads
+from .rivers import compute_rivers
+from .cities import place_cities
+from .roads import build_roads
 from .borders import unite_regions, compute_borders
 from .rasterizer import rasterize
 from .utils import seeded_rng
