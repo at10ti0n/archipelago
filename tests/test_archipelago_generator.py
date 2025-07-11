@@ -2,7 +2,7 @@ import numpy as np
 from archipelago_generator import generate_archipelago
 from archipelago_generator import render_archipelago
 from archipelago_generator.rasterizer import rasterize
-from archipelago_generator.rivers import SEA_LEVEL
+from archipelago_generator.generator import ArchipelagoParams
 
 
 def test_deterministic():
@@ -44,9 +44,10 @@ def test_render_legend(capsys):
 
 
 def test_roads_on_land():
-    arch = generate_archipelago(width=60, height=60, seed=4)
+    sea_level = ArchipelagoParams.sea_level
+    arch = generate_archipelago(width=60, height=60, seed=4, sea_level=sea_level)
     elev_grid = rasterize(arch.cells, arch.elevation, arch.width, arch.height)
     for y in range(arch.height):
         for x in range(arch.width):
             if arch.road_map[y, x]:
-                assert elev_grid[y, x] >= SEA_LEVEL
+                assert elev_grid[y, x] >= sea_level

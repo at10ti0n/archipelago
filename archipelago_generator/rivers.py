@@ -17,7 +17,9 @@ SEA_LEVEL = 0.26
 import numpy as np
 
 
-def compute_water_flux(elevation: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def compute_water_flux(
+    elevation: np.ndarray, *, sea_level: float = SEA_LEVEL
+) -> tuple[np.ndarray, np.ndarray]:
     """Compute water flux and downslope for each tile.
 
     Parameters
@@ -57,7 +59,12 @@ def compute_water_flux(elevation: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
 
 
 def trace_rivers(
-    water_flux: np.ndarray, downslope: np.ndarray, elevation: np.ndarray, *, min_flux: float = 3.0
+    water_flux: np.ndarray,
+    downslope: np.ndarray,
+    elevation: np.ndarray,
+    *,
+    min_flux: float = 3.0,
+    sea_level: float = SEA_LEVEL,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Trace river paths following downslope until reaching sea level."""
 
@@ -72,14 +79,14 @@ def trace_rivers(
     for y, x in coords:
         if (y, x) not in visited:
             cy, cx = y, x
-            while elevation[cy, cx] >= SEA_LEVEL:
+            while elevation[cy, cx] >= sea_level:
                 if (cy, cx) in visited:
                     break
                 visited.add((cy, cx))
                 river_map[cy, cx] = river_id
                 river_width[cy, cx] = int(max(1, np.log2(water_flux[cy, cx])))
                 ny, nx = downslope[cy, cx]
-                if ny < 0 or elevation[ny, nx] < SEA_LEVEL:
+                if ny < 0 or elevation[ny, nx] < sea_level:
                     break
                 cy, cx = ny, nx
             river_id += 1
@@ -88,7 +95,12 @@ def trace_rivers(
 
 
 def place_cities(
-    river_map: np.ndarray, elevation: np.ndarray, *, n_cities: int = 3, min_dist: int = 10
+    river_map: np.ndarray,
+    elevation: np.ndarray,
+    *,
+    n_cities: int = 3,
+    min_dist: int = 10,
+    sea_level: float = SEA_LEVEL,
 ) -> List[Tuple[int, int]]:
     """Place cities near rivers or coasts with spacing."""
 
@@ -96,9 +108,11 @@ def place_cities(
     candidates: list[tuple[int, int]] = []
     for y in range(height):
         for x in range(width):
-            if SEA_LEVEL < elevation[y, x] < 0.8:
+            if sea_level < elevation[y, x] < 0.8:
                 if river_map[y, x] > 0 or any(
-                    0 <= y + dy < height and 0 <= x + dx < width and elevation[y + dy, x + dx] < SEA_LEVEL
+                    0 <= y + dy < height
+                    and 0 <= x + dx < width
+                    and elevation[y + dy, x + dx] < sea_level
                     for dy in [-1, 0, 1]
                     for dx in [-1, 0, 1]
                 ):
@@ -154,7 +168,12 @@ def _astar(start: tuple[int, int], goal: tuple[int, int], cost_grid: np.ndarray)
     return path
 
 
-def build_roads(cities: List[Tuple[int, int]], elevation: np.ndarray) -> np.ndarray:
+def build_roads(
+    cities: List[Tuple[int, int]],
+    elevation: np.ndarray,
+    *,
+    sea_level: float = SEA_LEVEL,
+) -> np.ndarray:
     """Connect consecutive cities using A* to create roads."""
 
     height, width = elevation.shape
@@ -163,7 +182,7 @@ def build_roads(cities: List[Tuple[int, int]], elevation: np.ndarray) -> np.ndar
         return road
 
     cost = 1.0 + elevation * 3.0
-    cost[elevation < SEA_LEVEL] = 1e6
+    cost[elevation < sea_level] = 1e6
     for a, b in zip(cities[:-1], cities[1:]):
         path = _astar(a, b, cost)
         for y, x in path:
@@ -171,10 +190,12 @@ def build_roads(cities: List[Tuple[int, int]], elevation: np.ndarray) -> np.ndar
     return road
 
 
-def compute_rivers(elevation: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def compute_rivers(
+    elevation: np.ndarray, *, sea_level: float = SEA_LEVEL
+) -> tuple[np.ndarray, np.ndarray]:
     """Convenience wrapper returning ``(river_map, river_width)``."""
 
-    flux, downslope = compute_water_flux(elevation)
-    return trace_rivers(flux, downslope, elevation)
+    flux, downslope = compute_water_flux(elevation, sea_level=sea_level)
+    return trace_rivers(flux, downslope, elevation, sea_level=sea_level)
 
 
